@@ -11,13 +11,13 @@
 
 void BH1750::init()
 {
-	I2C::init();
+	I2C.init();
 	set(BH_Power_On);
 }
 
 void BH1750::set(BHMode mode)
 {
-	I2C::send(BH_Address, mode);
+	I2C.send(BH_Address, mode);
 }
 
 void BH1750::reset()
@@ -28,6 +28,6 @@ void BH1750::reset()
 uint16_t BH1750::getData()
 {
 	uint8_t dataBuf[2];
-	I2C::receive(BH_Address, dataBuf, 2);
+	I2C.receive(BH_Address, dataBuf, 2);
 	return (uint16_t) dataBuf[0] << 8 | dataBuf[1];
 }

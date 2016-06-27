@@ -450,17 +450,18 @@ void OLED_GPIO_Init()
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
 
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_OLED_GPIOX, ENABLE);
+	RCC_APB2PeriphClockCmd(OLED_RCC_MASKx(OLED_DC_PORT_NUMBER), ENABLE);
+	RCC_APB2PeriphClockCmd(OLED_RCC_MASKx(OLED_RESET_PORT_NUMBER), ENABLE);
 
-	GPIO_InitStructure.GPIO_Pin = OLED_DC;
+	GPIO_InitStructure.GPIO_Pin = OLED_PIN_MASK(OLED_DC_PIN_NUMBER);
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 
-	GPIO_Init(OLED_GPIOX, &GPIO_InitStructure);
+	GPIO_Init(OLED_GPIOx(OLED_DC_PORT_NUMBER), &GPIO_InitStructure);
 
-	GPIO_InitStructure.GPIO_Pin = OLED_Reset;
+	GPIO_InitStructure.GPIO_Pin = OLED_PIN_MASK(OLED_RESET_PIN_NUMBER);
 
-	GPIO_Init(OLED_GPIOX, &GPIO_InitStructure);
+	GPIO_Init(OLED_GPIOx(OLED_RESET_PORT_NUMBER), &GPIO_InitStructure);
 }
 #endif
 
@@ -472,10 +473,12 @@ void OLED::init()
 #endif
 #ifdef SPI_Intface
 	OLED_GPIO_Init();
-	SPI::init();
-	GPIO_WriteBit(OLED_GPIOX, OLED_Reset, Bit_RESET);
+	SPI.init();
+	GPIO_WriteBit(OLED_GPIOx(OLED_RESET_PORT_NUMBER),
+			OLED_PIN_MASK(OLED_RESET_PIN_NUMBER), Bit_RESET);
 	Delay_ms(50);
-	GPIO_WriteBit(OLED_GPIOX, OLED_Reset, Bit_SET);
+	GPIO_WriteBit(OLED_GPIOx(OLED_RESET_PORT_NUMBER),
+			OLED_PIN_MASK(OLED_RESET_PIN_NUMBER), Bit_SET);
 	Delay_ms(50);
 #endif
 	//从上电到下面开始初始化要有足够的时间，即等待RC复位完毕
@@ -516,13 +519,14 @@ void OLED::write(uint8_t data, WriteMode mode)
 {
 #ifdef I2C_Intface
 	if (mode == Cmd_Mode)
-		I2C::send(OLED_Address, (uint8_t) 0x00, data);
+	I2C::send(OLED_Address, (uint8_t) 0x00, data);
 	else if (mode == Data_Mode)
-		I2C::send(OLED_Address, (uint8_t) 0x40, data);
+	I2C::send(OLED_Address, (uint8_t) 0x40, data);
 #endif
 #ifdef SPI_Intface
-	GPIO_WriteBit(OLED_GPIOX, OLED_DC, (BitAction) mode);
-	SPI::transfer(data);
+	GPIO_WriteBit(OLED_GPIOx(OLED_DC_PORT_NUMBER),
+			OLED_PIN_MASK(OLED_DC_PIN_NUMBER), (BitAction) mode);
+	SPI.transfer(data);
 #endif
 }
 
@@ -569,18 +573,21 @@ void OLED::print(uint8_t x, uint8_t y, long num, CharMode mode)
 	print(x, y, str, mode);
 }
 
-void OLED::print(uint8_t x, uint8_t y, float f, CharMode mode)
+void OLED::print(uint8_t x, uint8_t y, float f, uint8_t ndigit, CharMode mode)
 {
 	char str[20];
-	str[19] = '\0';
-	sprintf(str, "%f", f);
+	char format[6] = "%.0f";
+	format[2] = 0x30 + ndigit;
+	sprintf(str, format, f);
 	print(x, y, str, mode);
 }
 
-void OLED::print(uint8_t x, uint8_t y, double lf, CharMode mode)
+void OLED::print(uint8_t x, uint8_t y, double lf, uint8_t ndigit, CharMode mode)
 {
 	char str[20];
-	sprintf(str, "%lf", lf);
+	char format[6] = "%.0lf";
+	format[2] = 0x30 + ndigit;
+	sprintf(str, format, lf);
 	print(x, y, str, mode);
 }
 

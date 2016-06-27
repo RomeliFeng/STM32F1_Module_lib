@@ -11,17 +11,23 @@
 
 #include "stm32f10x.h"
 
-#define I2C_Intface
-//#define SPI_Intface
+//#define I2C_Intface
+#define SPI_Intface
 
 #ifdef I2C_Intface
 #define OLED_Address 0x78
 #endif
 #ifdef SPI_Intface
-#define RCC_APB2Periph_OLED_GPIOX RCC_APB2Periph_GPIOB
-#define OLED_Reset GPIO_Pin_1
-#define OLED_GPIOX GPIOB
-#define OLED_DC GPIO_Pin_0
+
+// Port numbers: 0=A, 1=B, 2=C, 3=D, 4=E, 5=F, 6=G, ...
+#define OLED_DC_PORT_NUMBER               (1)
+#define OLED_DC_PIN_NUMBER                (0)
+#define OLED_RESET_PORT_NUMBER            (1)
+#define OLED_RESET_PIN_NUMBER             (1)
+
+#define OLED_GPIOx(_N)                 ((GPIO_TypeDef *)(GPIOA_BASE + (GPIOB_BASE-GPIOA_BASE)*(_N)))
+#define OLED_PIN_MASK(_N)              (1 << (_N))
+#define OLED_RCC_MASKx(_N)             (RCC_APB2Periph_GPIOA << (_N))
 
 void OLED_GPIO_Init();
 #endif
@@ -48,8 +54,10 @@ public:
 	static void print(uint8_t x, uint8_t y, char *str, CharMode mode);
 	static void print(uint8_t x, uint8_t y, int num, CharMode mode);
 	static void print(uint8_t x, uint8_t y, long num, CharMode mode);
-	static void print(uint8_t x, uint8_t y, float f, CharMode mode);
-	static void print(uint8_t x, uint8_t y, double lf, CharMode mode);
+	static void print(uint8_t x, uint8_t y, float f, uint8_t ndigit,
+			CharMode mode);
+	static void print(uint8_t x, uint8_t y, double lf, uint8_t ndigit,
+			CharMode mode);
 };
 
 #endif /* OLED_H_ */
