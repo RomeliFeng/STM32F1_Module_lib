@@ -42,22 +42,23 @@ typedef enum
 	C6x8 = 6, C8x16 = 8, C16x16 = 16
 } CharMode;
 
-class OLED
+class OLEDClass
 {
 public:
 
-	static void init();
-	static void write(uint8_t data, WriteMode mode);
-	static void set_pos(uint8_t x, uint8_t y);
-	static void fill(uint8_t bmp);
-	static void print_c(uint8_t x, uint8_t y, char data, CharMode mode);
-	static void print(uint8_t x, uint8_t y, char *str, CharMode mode);
-	static void print(uint8_t x, uint8_t y, int num, CharMode mode);
-	static void print(uint8_t x, uint8_t y, long num, CharMode mode);
-	static void print(uint8_t x, uint8_t y, float f, uint8_t ndigit,
+	void init();
+	void write(uint8_t data, WriteMode mode);
+	void set_pos(uint8_t x, uint8_t y);
+	void fill(uint8_t bmp);
+	void print_c(uint8_t x, uint8_t y, char data, CharMode mode);
+	void print(uint8_t x, uint8_t y, char *str, CharMode mode);
+	void print(uint8_t x, uint8_t y, int num, CharMode mode);
+	void print(uint8_t x, uint8_t y, long num, CharMode mode);
+	void print(uint8_t x, uint8_t y, float f, uint8_t ndigit,
 			CharMode mode);
-	static void print(uint8_t x, uint8_t y, double lf, uint8_t ndigit,
+	void print(uint8_t x, uint8_t y, double lf, uint8_t ndigit,
 			CharMode mode);
 };
 
+extern OLEDClass OLED;
 #endif /* OLED_H_ */

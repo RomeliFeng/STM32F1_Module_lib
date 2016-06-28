@@ -8,6 +8,8 @@
 #include "Delay.h"
 #include "stdio.h"
 
+OLEDClass OLED;
+
 #ifdef I2C_Intface
 #include "I2C.h"
 #endif
@@ -465,7 +467,7 @@ void OLED_GPIO_Init()
 }
 #endif
 
-void OLED::init()
+void OLEDClass::init()
 {
 	SysTick_Init();
 #ifdef I2C_Intface
@@ -515,7 +517,7 @@ void OLED::init()
 	set_pos(0, 0);
 }
 
-void OLED::write(uint8_t data, WriteMode mode)
+void OLEDClass::write(uint8_t data, WriteMode mode)
 {
 #ifdef I2C_Intface
 	if (mode == Cmd_Mode)
@@ -530,14 +532,14 @@ void OLED::write(uint8_t data, WriteMode mode)
 #endif
 }
 
-void OLED::set_pos(uint8_t x, uint8_t y)
+void OLEDClass::set_pos(uint8_t x, uint8_t y)
 {
 	write(0xb0 + y, Cmd_Mode);
 	write(((x & 0xf0) >> 4) | 0x10, Cmd_Mode);
 	write((x & 0x0f) | 0x00, Cmd_Mode);
 }
 
-void OLED::fill(uint8_t bmp_dat)
+void OLEDClass::fill(uint8_t bmp_dat)
 {
 	uint8_t y, x;
 	for (y = 0; y < 8; y++)
@@ -549,7 +551,7 @@ void OLED::fill(uint8_t bmp_dat)
 
 }
 
-void OLED::print(uint8_t x, uint8_t y, char* str, CharMode mode)
+void OLEDClass::print(uint8_t x, uint8_t y, char* str, CharMode mode)
 {
 	while (x <= (128 - (128 % mode) - mode) && *str != '\0') //计算最后一位可写位 && 循环输出字符
 	{
@@ -559,21 +561,21 @@ void OLED::print(uint8_t x, uint8_t y, char* str, CharMode mode)
 	}
 }
 
-void OLED::print(uint8_t x, uint8_t y, int num, CharMode mode)
+void OLEDClass::print(uint8_t x, uint8_t y, int num, CharMode mode)
 {
 	char str[20];
 	sprintf(str, "%d", num);
 	print(x, y, str, mode);
 }
 
-void OLED::print(uint8_t x, uint8_t y, long num, CharMode mode)
+void OLEDClass::print(uint8_t x, uint8_t y, long num, CharMode mode)
 {
 	char str[20];
 	sprintf(str, "%ld", num);
 	print(x, y, str, mode);
 }
 
-void OLED::print(uint8_t x, uint8_t y, float f, uint8_t ndigit, CharMode mode)
+void OLEDClass::print(uint8_t x, uint8_t y, float f, uint8_t ndigit, CharMode mode)
 {
 	char str[20];
 	char format[6] = "%.0f";
@@ -582,7 +584,7 @@ void OLED::print(uint8_t x, uint8_t y, float f, uint8_t ndigit, CharMode mode)
 	print(x, y, str, mode);
 }
 
-void OLED::print(uint8_t x, uint8_t y, double lf, uint8_t ndigit, CharMode mode)
+void OLEDClass::print(uint8_t x, uint8_t y, double lf, uint8_t ndigit, CharMode mode)
 {
 	char str[20];
 	char format[6] = "%.0lf";
@@ -591,7 +593,7 @@ void OLED::print(uint8_t x, uint8_t y, double lf, uint8_t ndigit, CharMode mode)
 	print(x, y, str, mode);
 }
 
-void OLED::print_c(uint8_t x, uint8_t y, char c, CharMode mode)
+void OLEDClass::print_c(uint8_t x, uint8_t y, char c, CharMode mode)
 {
 	set_pos(x, y);
 	switch (mode)
