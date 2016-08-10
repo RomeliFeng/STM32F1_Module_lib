@@ -1,79 +1,75 @@
 #include "Car.h"
-#include "PWM.h"
 
-Car::Car()
-{
-	init();
-}
-void Car::init()
-{
+#define Car_PWM_Resolution 10000.0
+
+CarClass Car;
+
+void CarClass::Init() {
 	//init pwm contrl gpio PA0-PA3
-	PWM::init(4095, 4095);
+	PWM.Init(Car_PWM_Resolution, Car_PWM_Resolution);
 
 	//init en_stop and direct gpio
 	Car_GPIO_Config();
 
-	//stop the car and set direction default
-	GPIO_SetBits(EN_Stop);
-	GPIO_SetBits(Direct);
+	//stop the CarClass and set direction default
+	GPIO_WriteBit(GPIOA, Car_E_Stop_Pin, Bit_SET);		//free motor
+	GPIO_WriteBit(GPIOA, Car_DIR1_Pin, Bit_RESET);		//default direct
+	GPIO_WriteBit(GPIOA, Car_DIR2_Pin, Bit_SET);		//default direct
 }
-/**
- * 函数：
- * run	同时控制4个通道的PWM
- * 参数：
- * speed	pwm占空比
- */
-void Car::run(uint16_t speed)
-{
-	PWM::set(speed);
-	GPIO_SetBits(EN_Stop);
+
+void CarClass::Stop() {
+	GPIO_WriteBit(GPIOA, Car_E_Stop_Pin, Bit_RESET);		//freeze motor
 }
-/**
- * 函数：
- * run	同时控制单个通道的PWM
- * 参数：
- * ch	修改的通道
- * speed	pwm占空比
- */
-void Car::run(uint8_t ch, uint16_t speed)
-{
-	PWM::set(ch,speed);
-	GPIO_SetBits(EN_Stop);
+
+void CarClass::SetSpeed(double Speed) {
+	SetSpeed(Car_Motor_Left, Speed);
+	SetSpeed(Car_Motor_Right, Speed);
 }
-/**
- * 函数：
- * stop	使能急停引脚
- */
-void Car::stop()
-{
-	GPIO_ResetBits(EN_Stop);
-}
-/**
- * 函数：
- * direct	控制方向引脚
- * 参数：
- * dir	方向		0或非0
- */
-void Car::direct(uint8_t dir)
-{
-	if (dir == 0)
-	{
-		GPIO_ResetBits(Direct);
-	}
-	else
-	{
-		GPIO_SetBits(Direct);
+
+void CarClass::SetSpeed(CarCh Ch, double Speed) {
+	switch (Ch) {
+	case Car_Motor_Left:
+		if (Speed < 0) {
+			Speed = -Speed;
+			GPIO_WriteBit(GPIOA, Car_DIR1_Pin, Bit_SET);	//exchange direct
+		} else {
+			GPIO_WriteBit(GPIOA, Car_DIR1_Pin, Bit_RESET);		//default direct
+		}
+		PWM.Set(PWMCh2, Car_PWM_Resolution - Speed * Car_PWM_Resolution);
+		break;
+	case Car_Motor_Right:
+		if (Speed < 0) {
+			Speed = -Speed;
+			GPIO_WriteBit(GPIOA, Car_DIR2_Pin, Bit_RESET);
+		} else {
+			GPIO_WriteBit(GPIOA, Car_DIR2_Pin, Bit_SET);		//default direct
+		}
+		PWM.Set(PWMCh3, Car_PWM_Resolution - Speed * Car_PWM_Resolution);
+		break;
+	default:
+		break;
 	}
 }
-/**
- * 函数：
- * Car_GPIO_Config	急停引脚和方向引脚的GPIO初始化
- */
-void Car_GPIO_Config()
-{
+
+void Car_GPIO_Config() {
 	GPIO_InitTypeDef GPIO_InitStructure;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14 | GPIO_Pin_15;
-	GPIO_InitStructure.GPIO_Mode=GPIO_Mode_Out_PP;
-	GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
-	GPIO_Init(GPIOC,&GPIO_InitStructure);
+	/*
+	 * PA0---E_STOP
+	 * PA1---PWM1		//init in pwm.cpp
+	 * PA2---PWM2		//init in pwm.cpp
+	 * PA3---DIR1
+	 * PA4---DIR2
+	 * PA5---OUT1
+	 * PA6---OUT2
+	 */
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+
+	GPIO_InitStructure.GPIO_Pin = Car_E_Stop_Pin | Car_DIR1_Pin | Car_DIR2_Pin;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Pin = Car_OUT1_Pin | Car_OUT1_Pin;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
 }

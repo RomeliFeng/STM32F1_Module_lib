@@ -1,5 +1,5 @@
 /*
- * Car.cpp
+ * CarClass.cpp
  *
  *  Created on: 2016Äê5ÔÂ22ÈÕ
  *      Author: Romeli
@@ -8,27 +8,30 @@
 #ifndef _Car_h_
 #define _Car_h_
 
-#include "stm32f10x.h"
+#include <stm32f10x.h>
+#include "PWM.h"
 
-#define EN_Stop GPIOC,GPIO_Pin_14
-#define Direct GPIOC,GPIO_Pin_15
+#define Car_E_Stop_Pin GPIO_Pin_0
+#define Car_DIR1_Pin GPIO_Pin_3
+#define Car_DIR2_Pin GPIO_Pin_4
+#define Car_OUT1_Pin GPIO_Pin_5
+#define Car_OUT2_Pin GPIO_Pin_6
 
+typedef enum _CarCh {
+	Car_Motor_Left, Car_Motor_Right		//PWMCh2=left PWMCh3=right
+} CarCh;
 
-
-class Car
-{
+class CarClass {
 public:
-	Car();
-	static void init();
-	static void run(uint16_t speed);
-	static void run(uint8_t ch, uint16_t speed);
-	static void stop();
-	static void direct(uint8_t dir);
-	~Car();
-
+	void Init();
+	void SetSpeed(double Speed);
+	void SetSpeed(CarCh Ch, double Speed);
+	void Stop();
 private:
 };
 
 void Car_GPIO_Config();
+
+extern CarClass Car;
 
 #endif
