@@ -90,13 +90,16 @@ void nRF24_GPIO_Init() {
 	nRF_CSN_Set; //禁止SPI
 }
 
-void nRF24Class::Init(nRFMode mode, uint8_t ch) {
+uint8_t nRF24Class::Init(nRFMode mode, uint8_t ch) {
 	SPI.Init();
 	nRF24_GPIO_Init();
-	SetMode(mode, ch);
+	return SetMode(mode, ch);
 }
 
-void nRF24Class::SetMode(nRFMode mode, uint8_t ch) {
+uint8_t nRF24Class::SetMode(nRFMode mode, uint8_t ch) {
+	uint8_t status = Check();
+	if (status == 0)
+		return 0;
 	nRF_CE_Reset;	//使能nRF24
 	switch (mode) {
 	case nRFMode_Rx:
@@ -122,6 +125,7 @@ void nRF24Class::SetMode(nRFMode mode, uint8_t ch) {
 		break;
 	}
 	nRF_CE_Set;	//CE为高,10us后启动发送
+	return 1;
 }
 
 uint8_t nRF24Class::Check() {

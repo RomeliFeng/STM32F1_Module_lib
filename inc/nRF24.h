@@ -20,8 +20,8 @@ void nRF24_GPIO_Init();
 
 class nRF24Class {
 public:
-	void Init(nRFMode mode, uint8_t ch);
-	void SetMode(nRFMode mode, uint8_t ch);
+	uint8_t Init(nRFMode mode, uint8_t ch);
+	uint8_t SetMode(nRFMode mode, uint8_t ch);
 	uint8_t Check();
 	uint8_t Send(uint8_t Reg_Add, uint8_t data);
 	uint8_t Send(uint8_t Reg_Add, uint8_t* dataBuf, uint8_t size);
