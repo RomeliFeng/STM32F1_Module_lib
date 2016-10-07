@@ -23,7 +23,7 @@ nRF24Class nRF24;
 #define nRF_RX_OK 0x40
 
 #define RX_PLOAD_WIDTH 32
-#define TX_PLOAD_WIDTH 8
+#define TX_PLOAD_WIDTH 32
 
 uint8_t nRF_TX_ADD[5] = { 0x01, 0x23, 0x45, 0x67, 0x89 };
 uint8_t nRF_RX_ADD[5] = { 0x01, 0x23, 0x45, 0x67, 0x89 };
@@ -113,7 +113,7 @@ void nRF24Class::SetMode(nRFMode mode, uint8_t ch) {
 		Send(nRFCom_W_REGISTER + nRFAdd_RX_ADDR_P0, nRF_RX_ADD, 5); //设置RX节点地址,主要为了使能ACK
 		Send(nRFCom_W_REGISTER + nRFAdd_EN_AA, 0x01);     //使能通道0的自动应答
 		Send(nRFCom_W_REGISTER + nRFAdd_EN_RXADDR, 0x01); //使能通道0的接收地址
-		Send(nRFCom_W_REGISTER + nRFAdd_SETUP_RETR, 0); //设置自动重发间隔时间:500us + 86us;最大自动重发次数:10次 0x1a
+		Send(nRFCom_W_REGISTER + nRFAdd_SETUP_RETR, 0x1a); //设置自动重发间隔时间:500us + 86us;最大自动重发次数:10次
 		Send(nRFCom_W_REGISTER + nRFAdd_RF_CH, ch);       //设置RF通道为40
 		Send(nRFCom_W_REGISTER + nRFAdd_RF_SETUP, 0x0f); //设置TX发射参数,0db增益,2Mbps,低噪声增益开启
 		Send(nRFCom_W_REGISTER + nRFAdd_CONFIG, 0x0e); //配置基本工作模式的参数;PWR_UP,EN_CRC,16BIT_CRC,接收模式,开启所有中断
@@ -175,35 +175,51 @@ uint8_t nRF24Class::Receive(uint8_t Reg_Add, uint8_t* dataBuf, uint8_t size) {
 	return status;
 }
 
-uint8_t nRF24Class::RxPacket(uint8_t* dataBuf) {
+uint8_t nRF24Class::RxPacket(uint8_t* dataBuf, uint8_t size) {
 	uint8_t status;
 	status = Receive(nRFAdd_STATUS);  //读取状态寄存器的值
 	Send(nRFCom_W_REGISTER + nRFAdd_STATUS, status); //清除TX_DS或MAX_RT中断标志
 	if (status & nRF_RX_OK) //接收到数据
 	{
-		Send(nRFCom_RX_PAYLOAD, dataBuf, RX_PLOAD_WIDTH); //读取数据
+		nRF_CSN_Reset; //使能SPI
+		status = SPI.transfer(nRFCom_RX_PAYLOAD);
+		for (uint8_t i = 0; i < size; ++i) {
+			dataBuf[i] = SPI.transfer(0xff);
+		}
+		for (uint8_t i = 0; i < RX_PLOAD_WIDTH - size; ++i) {
+			SPI.transfer(0xff);
+		}
+		nRF_CSN_Set; //禁止SPI
 		Send(nRFCom_FLUSH_RX, 0xff); //清除RX FIFO寄存器
 		return 1;
 	}
 	return 0; //没收到任何数据
 }
 
-uint8_t nRF24Class::TxPacket(uint8_t* dataBuf) {
+uint8_t nRF24Class::TxPacket(uint8_t* dataBuf, uint8_t size) {
 	uint8_t status;
 	nRF_CE_Reset;
-	Send(nRFCom_TX_PAYLOAD, dataBuf, TX_PLOAD_WIDTH);	//写数据到TX BUF  32个字节
+	nRF_CSN_Reset; //使能SPI
+	status = SPI.transfer(nRFCom_TX_PAYLOAD);
+	for (uint8_t i = 0; i < size; ++i) {
+		SPI.transfer(dataBuf[i]);
+	}
+	for (uint8_t i = 0; i < TX_PLOAD_WIDTH - size; ++i) {
+		SPI.transfer(0);
+	}
+	nRF_CSN_Set; //禁止SPI
 	nRF_CE_Set;				//启动发送
 
 #ifdef USE_IRQ
 	while (nRF_IRQ_Read != 0)
-		;			//等待发送完成
+	;			//等待发送完成
 	status = Receive(nRFAdd_STATUS);
 #else
 	uint8_t flag = 1;
 	while (flag) {
 		status = Receive(nRFAdd_STATUS);
 		if ((status & nRF_MAX_TX) | (status & nRF_TX_OK))
-		flag = 0;
+			flag = 0;
 	}
 #endif
 	status = Receive(nRFAdd_STATUS);

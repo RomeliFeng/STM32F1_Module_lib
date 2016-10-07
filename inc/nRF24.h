@@ -27,8 +27,8 @@ public:
 	uint8_t Send(uint8_t Reg_Add, uint8_t* dataBuf, uint8_t size);
 	uint8_t Receive(uint8_t Reg_Add);
 	uint8_t Receive(uint8_t Reg_Add, uint8_t* dataBuf, uint8_t size);
-	uint8_t RxPacket(uint8_t* dataBuf);
-	uint8_t TxPacket(uint8_t* dataBuf);
+	uint8_t RxPacket(uint8_t* dataBuf, uint8_t size);
+	uint8_t TxPacket(uint8_t* dataBuf, uint8_t size);
 };
 
 extern nRF24Class nRF24;
