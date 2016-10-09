@@ -12,10 +12,10 @@
 #include "PWM.h"
 
 #define Car_E_Stop_Pin GPIO_Pin_0
-#define Car_DIR1_Pin GPIO_Pin_3
-#define Car_DIR2_Pin GPIO_Pin_4
-#define Car_OUT1_Pin GPIO_Pin_5
-#define Car_OUT2_Pin GPIO_Pin_6
+#define Car_DIR1_Pin GPIO_Pin_2
+#define Car_DIR2_Pin GPIO_Pin_3
+#define Car_OUT1_Pin GPIO_Pin_4
+#define Car_OUT2_Pin GPIO_Pin_5
 
 typedef enum _CarCh {
 	Car_Motor_Left, Car_Motor_Right		//PWMCh2=left PWMCh3=right
