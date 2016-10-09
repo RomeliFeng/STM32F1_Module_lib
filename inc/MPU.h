@@ -10,14 +10,10 @@
 
 #include "stm32f10x.h"
 
-typedef union {
-	int16_t Word;
-	uint8_t Byte[2];
-} _WordandByte;
 typedef struct {
-	_WordandByte X;
-	_WordandByte Y;
-	_WordandByte Z;
+	int16_t X;
+	int16_t Y;
+	int16_t Z;
 } _MPUDataUnit;
 typedef struct {
 	_MPUDataUnit ACC;
