@@ -17,6 +17,10 @@ void CarClass::Init() {
 	GPIO_WriteBit(GPIOA, Car_DIR2_Pin, Bit_SET);		//default direct
 }
 
+void CarClass::Run() {
+	GPIO_WriteBit(GPIOB, Car_E_Stop_Pin, Bit_SET);		//free motor
+}
+
 void CarClass::Stop() {
 	GPIO_WriteBit(GPIOB, Car_E_Stop_Pin, Bit_RESET);		//freeze motor
 }
@@ -79,3 +83,4 @@ void Car_GPIO_Config() {
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 }
+

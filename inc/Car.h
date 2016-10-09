@@ -26,6 +26,7 @@ public:
 	void Init();
 	void SetSpeed(double Speed);
 	void SetSpeed(CarCh Ch, double Speed);
+	void Run();
 	void Stop();
 private:
 };
