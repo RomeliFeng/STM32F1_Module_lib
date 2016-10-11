@@ -18,7 +18,7 @@
 #define Car_OUT2_Pin GPIO_Pin_5
 
 typedef enum _CarCh {
-	CarCh_Left, CarCh_Right		//PWMCh2=left PWMCh3=right
+	CarChLeft, CarChRight		//PWMCh2=left PWMCh3=right
 } CarCh;
 
 class CarClass {

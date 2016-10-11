@@ -12,7 +12,7 @@
 
 typedef enum _LEDColor
 {
-	LED_Off = -1, LED_Green, LED_Red
+	LEDColorOff = -1, LEDColorGreen, LEDColorRed
 } LEDColor;
 
 void LED_Init();

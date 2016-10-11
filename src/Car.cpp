@@ -1,6 +1,6 @@
 #include "Car.h"
 
-#define Car_PWM_Resolution 1024.0
+#define Car_PWM_Resolution 1024
 
 CarClass Car;
 
@@ -26,13 +26,13 @@ void CarClass::Stop() {
 }
 
 void CarClass::SetSpeed(double Speed) {
-	SetSpeed(CarCh_Left, Speed);
-	SetSpeed(CarCh_Right, Speed);
+	SetSpeed(CarChLeft, Speed);
+	SetSpeed(CarChRight, Speed);
 }
 
 void CarClass::SetSpeed(CarCh Ch, double Speed) {
 	switch (Ch) {
-	case CarCh_Left:
+	case CarChLeft:
 		if (Speed < 0) {
 			Speed = -Speed;
 			GPIO_WriteBit(GPIOA, Car_DIR1_Pin, Bit_SET);	//exchange direct
@@ -41,7 +41,7 @@ void CarClass::SetSpeed(CarCh Ch, double Speed) {
 		}
 		PWM.Set(PWMCh1, Car_PWM_Resolution - (Speed * Car_PWM_Resolution));
 		break;
-	case CarCh_Right:
+	case CarChRight:
 		if (Speed < 0) {
 			Speed = -Speed;
 			GPIO_WriteBit(GPIOA, Car_DIR2_Pin, Bit_RESET);

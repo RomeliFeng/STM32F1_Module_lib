@@ -26,15 +26,15 @@ void LED_Turn(LEDColor color)
 {
 	switch (color)
 	{
-	case LED_Green:
+	case LEDColorGreen:
 		GPIO_WriteBit(GPIOB, GPIO_Pin_9, Bit_RESET);
 		GPIO_WriteBit(GPIOB, GPIO_Pin_8, Bit_SET);
 		break;
-	case LED_Red:
+	case LEDColorRed:
 		GPIO_WriteBit(GPIOB, GPIO_Pin_8, Bit_RESET);
 		GPIO_WriteBit(GPIOB, GPIO_Pin_9, Bit_SET);
 		break;
-	case LED_Off:
+	case LEDColorOff:
 		GPIO_WriteBit(GPIOB, GPIO_Pin_8, Bit_SET);
 		GPIO_WriteBit(GPIOB, GPIO_Pin_9, Bit_SET);
 		break;
