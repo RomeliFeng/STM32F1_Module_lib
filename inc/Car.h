@@ -10,6 +10,7 @@
 
 #include <stm32f10x.h>
 #include "PWM.h"
+#include "Delay.h"
 
 #define Car_E_Stop_Pin GPIO_Pin_0
 #define Car_DIR1_Pin GPIO_Pin_2
@@ -18,20 +19,28 @@
 #define Car_OUT2_Pin GPIO_Pin_5
 
 typedef enum _CarCh {
-	CarChLeft, CarChRight		//PWMCh2=left PWMCh3=right
+	CarChLeft, CarChRight
 } CarCh;
+typedef enum _CarCount {
+	CarCountLeft, CarCountRight, CarCountBoth
+} CarCount;
 
 class CarClass {
 public:
-	void Init();
+	void Init(CarCount CountEnable);
 	void SetSpeed(double Speed);
 	void SetSpeed(CarCh Ch, double Speed);
 	void Run();
 	void Stop();
+	bool LeftDir;
+	bool RightDir;
+	int32_t LeftCount = 0;
+	int32_t RightCount = 0;
 private:
 };
 
 void Car_GPIO_Config();
+void Car_Count_Config(CarCount CountEnable);
 
 extern CarClass Car;
 

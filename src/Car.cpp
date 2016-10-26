@@ -4,13 +4,13 @@
 
 CarClass Car;
 
-void CarClass::Init() {
+void CarClass::Init(CarCount CountEnable) {
 	//init pwm contrl gpio PA0-PA3
 	PWM.Init(Car_PWM_Resolution, Car_PWM_Resolution);
 
 	//init en_stop and direct gpio
 	Car_GPIO_Config();
-
+	Car_Count_Config(CountEnable);
 	//stop the CarClass and set direction default
 	GPIO_WriteBit(GPIOB, Car_E_Stop_Pin, Bit_SET);		//free motor
 	GPIO_WriteBit(GPIOA, Car_DIR1_Pin, Bit_RESET);		//default direct
@@ -35,8 +35,10 @@ void CarClass::SetSpeed(CarCh Ch, double Speed) {
 	case CarChLeft:
 		if (Speed < 0) {
 			Speed = -Speed;
+			LeftDir = false;
 			GPIO_WriteBit(GPIOA, Car_DIR1_Pin, Bit_SET);	//exchange direct
 		} else {
+			LeftDir = true;
 			GPIO_WriteBit(GPIOA, Car_DIR1_Pin, Bit_RESET);		//default direct
 		}
 		PWM.Set(PWMCh1, Car_PWM_Resolution - (Speed * Car_PWM_Resolution));
@@ -44,8 +46,10 @@ void CarClass::SetSpeed(CarCh Ch, double Speed) {
 	case CarChRight:
 		if (Speed < 0) {
 			Speed = -Speed;
+			RightDir = false;
 			GPIO_WriteBit(GPIOA, Car_DIR2_Pin, Bit_RESET);
 		} else {
+			RightDir = true;
 			GPIO_WriteBit(GPIOA, Car_DIR2_Pin, Bit_SET);		//default direct
 		}
 		PWM.Set(PWMCh2, Car_PWM_Resolution - (Speed * Car_PWM_Resolution));
@@ -79,8 +83,67 @@ void Car_GPIO_Config() {
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
+}
+
+void Car_Count_Config(CarCount CountEnable) {
+	GPIO_InitTypeDef GPIO_InitStructure;
+	EXTI_InitTypeDef EXTI_InitStructure;
+	NVIC_InitTypeDef NVIC_InitStructure;
+
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+
 	GPIO_InitStructure.GPIO_Pin = Car_OUT1_Pin | Car_OUT1_Pin;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	if (CountEnable == CarCountLeft || CountEnable == CarCountBoth) {
+		GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource4);
+		EXTI_InitStructure.EXTI_Line = EXTI_Line4;
+		EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+		EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+		EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+		EXTI_Init(&EXTI_InitStructure);
+
+		NVIC_InitStructure.NVIC_IRQChannel = EXTI4_IRQn;
+		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 5;
+		NVIC_Init(&NVIC_InitStructure);
+	}
+	if (CountEnable == CarCountRight || CountEnable == CarCountBoth) {
+		GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource5);
+		EXTI_InitStructure.EXTI_Line = EXTI_Line5;
+		EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+		EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+		EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+		EXTI_Init(&EXTI_InitStructure);
+
+		NVIC_InitStructure.NVIC_IRQChannel = EXTI9_5_IRQn;
+		NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+		NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+		NVIC_InitStructure.NVIC_IRQChannelSubPriority = 5;
+		NVIC_Init(&NVIC_InitStructure);
+	}
+}
+
+extern "C" void EXTI4_IRQHandler(void) {
+	if (EXTI_GetITStatus(EXTI_Line4)) {
+		if (Car.LeftDir)
+			++Car.LeftCount;
+		else
+			--Car.LeftCount;
+		EXTI_ClearITPendingBit(EXTI_Line4);
+	}
+}
+
+extern "C" void EXTI9_5_IRQHandler(void) {
+	if (EXTI_GetITStatus(EXTI_Line5)) {
+		if (Car.RightDir)
+			++Car.RightCount;
+		else
+			--Car.RightCount;
+		EXTI_ClearITPendingBit(EXTI_Line5);
+	}
 }
 

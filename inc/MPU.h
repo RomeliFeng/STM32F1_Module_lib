@@ -18,6 +18,7 @@ typedef struct {
 typedef struct {
 	_MPUDataUnit ACC;
 	_MPUDataUnit GYRO;
+
 } _MPUData;
 
 class MPUClass {
