@@ -1,24 +1,33 @@
 /*
  * OLED.cpp
  *
- *  Created on: 2016Äê5ÔÂ22ÈÕ
+ *  Created on: 2016ï¿½ï¿½5ï¿½ï¿½22ï¿½ï¿½
  *      Author: Romeli
  */
 #include "OLED.h"
-#include "Delay.h"
 #include "stdio.h"
-
-OLEDClass OLED;
 
 #ifdef I2C_Intface
 #include "I2C.h"
 #endif
 #ifdef SPI_Intface
-#include "SPI.h"
+#include "U_SPI1.h"
+
+#define CS_PIN GPIO_Pin_3
+#define DC_PIN GPIO_Pin_4
+#define RES_PIN GPIO_Pin_6
+
+#define CS_SET (GPIOA->BSRR = CS_PIN)
+#define DC_SET (GPIOA->BSRR = DC_PIN)
+#define RES_SET (GPIOA->BSRR = RES_PIN)
+
+#define CS_RESET (GPIOA->BRR = CS_PIN)
+#define DC_RESET (GPIOA->BRR = DC_PIN)
+#define RES_RESET (GPIOA->BRR = RES_PIN)
+
 #endif
 
-const unsigned char F6x8[][6] =
-{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // sp
+const unsigned char F6x8[][6] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // sp
 		0x00, 0x00, 0x00, 0x2f, 0x00, 0x00, // !
 		0x00, 0x00, 0x07, 0x00, 0x07, 0x00, // "
 		0x00, 0x14, 0x7f, 0x14, 0x7f, 0x14, // #
@@ -111,9 +120,8 @@ const unsigned char F6x8[][6] =
 		0x00, 0x44, 0x64, 0x54, 0x4C, 0x44, // z
 		0x14, 0x14, 0x14, 0x14, 0x14, 0x14, // horiz lines
 		};
-const unsigned char F8x16[][16] =
-{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00,
+const unsigned char F8x16[][16] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, // 0
 		0x00, 0x00, 0x00, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33,
 		0x30, 0x00, 0x00,
@@ -397,233 +405,204 @@ const unsigned char F8x16[][16] =
 		0x00, 0x06, 0x01, 0x01, 0x02, 0x02, 0x04, 0x04, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, //~94
 		};
-const unsigned char F16x16[][32] =
-{
-{ 0x00, 0x00, 0x18, 0x16, 0x10, 0xD0, 0xB8, 0x97, 0x90, 0x90, 0x90, 0x92, 0x94,
-		0x10, 0x00, 0x00, 0x00, 0x20, 0x10, 0x8C, 0x83, 0x80, 0x41, 0x46, 0x28,
-		0x10, 0x28, 0x44, 0x43, 0x80, 0x80, 0x00 },/*"·¢",0*/
+const unsigned char F16x16[][32] = { { 0x00, 0x00, 0x18, 0x16, 0x10, 0xD0, 0xB8,
+		0x97, 0x90, 0x90, 0x90, 0x92, 0x94, 0x10, 0x00, 0x00, 0x00, 0x20, 0x10,
+		0x8C, 0x83, 0x80, 0x41, 0x46, 0x28, 0x10, 0x28, 0x44, 0x43, 0x80, 0x80,
+		0x00 },/*"ï¿½ï¿½",0*/
 
 { 0x80, 0x40, 0x30, 0x1E, 0x10, 0x10, 0x10, 0xFF, 0x10, 0x10, 0x10, 0x10, 0x10,
 		0x10, 0x00, 0x00, 0x40, 0x40, 0x42, 0x42, 0x42, 0x42, 0x42, 0x7F, 0x42,
-		0x42, 0x42, 0x42, 0x42, 0x40, 0x40, 0x00 },/*"Éú",1*/
+		0x42, 0x42, 0x42, 0x42, 0x40, 0x40, 0x00 },/*"ï¿½ï¿½",1*/
 
 { 0x00, 0xF8, 0x0C, 0x0B, 0x08, 0x08, 0xF8, 0x40, 0x30, 0x8F, 0x08, 0x08, 0x08,
 		0xF8, 0x00, 0x00, 0x00, 0x7F, 0x21, 0x21, 0x21, 0x21, 0x7F, 0x00, 0x00,
-		0x00, 0x43, 0x80, 0x40, 0x3F, 0x00, 0x00 },/*"µÄ",2*/
+		0x00, 0x43, 0x80, 0x40, 0x3F, 0x00, 0x00 },/*"ï¿½ï¿½",2*/
 
 { 0x20, 0x24, 0x24, 0xA4, 0xFE, 0x23, 0x22, 0x20, 0xFC, 0x04, 0x04, 0x04, 0x04,
 		0xFC, 0x00, 0x00, 0x10, 0x08, 0x06, 0x01, 0xFF, 0x01, 0x06, 0x80, 0x63,
-		0x19, 0x01, 0x01, 0x09, 0x33, 0xC0, 0x00 },/*"»ý",3*/
+		0x19, 0x01, 0x01, 0x09, 0x33, 0xC0, 0x00 },/*"ï¿½ï¿½",3*/
 
 { 0x80, 0x40, 0x20, 0x90, 0x88, 0x86, 0x80, 0x80, 0x80, 0x83, 0x8C, 0x10, 0x20,
 		0x40, 0x80, 0x00, 0x00, 0x80, 0x40, 0x20, 0x18, 0x07, 0x00, 0x40, 0x80,
-		0x40, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00 },/*"·Ö",4*/
+		0x40, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00 },/*"ï¿½ï¿½",4*/
 
 { 0x10, 0x10, 0x10, 0xFF, 0x90, 0x20, 0x10, 0xE8, 0x27, 0x24, 0xE4, 0x34, 0x2C,
 		0xE0, 0x00, 0x00, 0x02, 0x42, 0x81, 0x7F, 0x00, 0x84, 0x84, 0x47, 0x24,
-		0x1C, 0x07, 0x1C, 0x24, 0x47, 0x84, 0x00 },/*"»»",5*/
+		0x1C, 0x07, 0x1C, 0x24, 0x47, 0x84, 0x00 },/*"ï¿½ï¿½",5*/
 { 0x00, 0x00, 0x18, 0x16, 0x10, 0xD0, 0xB8, 0x97, 0x90, 0x90, 0x90, 0x92, 0x94,
 		0x10, 0x00, 0x00, 0x00, 0x20, 0x10, 0x8C, 0x83, 0x80, 0x41, 0x46, 0x28,
-		0x10, 0x28, 0x44, 0x43, 0x80, 0x80, 0x00 },/*"·¢",0*/
+		0x10, 0x28, 0x44, 0x43, 0x80, 0x80, 0x00 },/*"ï¿½ï¿½",0*/
 
 { 0x80, 0x40, 0x30, 0x1E, 0x10, 0x10, 0x10, 0xFF, 0x10, 0x10, 0x10, 0x10, 0x10,
 		0x10, 0x00, 0x00, 0x40, 0x40, 0x42, 0x42, 0x42, 0x42, 0x42, 0x7F, 0x42,
-		0x42, 0x42, 0x42, 0x42, 0x40, 0x40, 0x00 },/*"Éú",1*/
+		0x42, 0x42, 0x42, 0x42, 0x40, 0x40, 0x00 },/*"ï¿½ï¿½",1*/
 
 { 0x00, 0xF8, 0x0C, 0x0B, 0x08, 0x08, 0xF8, 0x40, 0x30, 0x8F, 0x08, 0x08, 0x08,
 		0xF8, 0x00, 0x00, 0x00, 0x7F, 0x21, 0x21, 0x21, 0x21, 0x7F, 0x00, 0x00,
-		0x00, 0x43, 0x80, 0x40, 0x3F, 0x00, 0x00 },/*"µÄ",2*/
+		0x00, 0x43, 0x80, 0x40, 0x3F, 0x00, 0x00 },/*"ï¿½ï¿½",2*/
 
 { 0x20, 0x24, 0x24, 0xA4, 0xFE, 0x23, 0x22, 0x20, 0xFC, 0x04, 0x04, 0x04, 0x04,
 		0xFC, 0x00, 0x00, 0x10, 0x08, 0x06, 0x01, 0xFF, 0x01, 0x06, 0x80, 0x63,
-		0x19, 0x01, 0x01, 0x09, 0x33, 0xC0, 0x00 },/*"»ý",3*/
+		0x19, 0x01, 0x01, 0x09, 0x33, 0xC0, 0x00 },/*"ï¿½ï¿½",3*/
 
 { 0x80, 0x40, 0x20, 0x90, 0x88, 0x86, 0x80, 0x80, 0x80, 0x83, 0x8C, 0x10, 0x20,
 		0x40, 0x80, 0x00, 0x00, 0x80, 0x40, 0x20, 0x18, 0x07, 0x00, 0x40, 0x80,
-		0x40, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00 },/*"·Ö",4*/
+		0x40, 0x3F, 0x00, 0x00, 0x00, 0x00, 0x00 },/*"ï¿½ï¿½",4*/
 
 { 0x10, 0x10, 0x10, 0xFF, 0x90, 0x20, 0x10, 0xE8, 0x27, 0x24, 0xE4, 0x34, 0x2C,
 		0xE0, 0x00, 0x00, 0x02, 0x42, 0x81, 0x7F, 0x00, 0x84, 0x84, 0x47, 0x24,
-		0x1C, 0x07, 0x1C, 0x24, 0x47, 0x84, 0x00 }, /*"»»",5*/
+		0x1C, 0x07, 0x1C, 0x24, 0x47, 0x84, 0x00 }, /*"ï¿½ï¿½",5*/
 };
 
 #ifdef SPI_Intface
-void OLED_GPIO_Init()
-{
+void OLED::GPIOInit() {
 	GPIO_InitTypeDef GPIO_InitStructure;
 
-	RCC_APB2PeriphClockCmd(OLED_RCC_MASKx(OLED_DC_PORT_NUMBER), ENABLE);
-	RCC_APB2PeriphClockCmd(OLED_RCC_MASKx(OLED_RESET_PORT_NUMBER), ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
 
-	GPIO_InitStructure.GPIO_Pin = OLED_PIN_MASK(OLED_DC_PIN_NUMBER);
+	GPIO_InitStructure.GPIO_Pin = CS_PIN | DC_PIN | RES_PIN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	GPIO_Init(OLED_GPIOx(OLED_DC_PORT_NUMBER), &GPIO_InitStructure);
-
-	GPIO_InitStructure.GPIO_Pin = OLED_PIN_MASK(OLED_RESET_PIN_NUMBER);
-
-	GPIO_Init(OLED_GPIOx(OLED_RESET_PORT_NUMBER), &GPIO_InitStructure);
+	CS_SET;
+	DC_SET;
+	RES_SET;
 }
 #endif
 
-void OLEDClass::init()
-{
-	SysTick_Init();
+void OLED::Init() {
 #ifdef I2C_Intface
 	I2C::init();
 #endif
 #ifdef SPI_Intface
-	OLED_GPIO_Init();
-	SPI.init();
-	GPIO_WriteBit(OLED_GPIOx(OLED_RESET_PORT_NUMBER),
-			OLED_PIN_MASK(OLED_RESET_PIN_NUMBER), Bit_RESET);
-	Delay_ms(50);
-	GPIO_WriteBit(OLED_GPIOx(OLED_RESET_PORT_NUMBER),
-			OLED_PIN_MASK(OLED_RESET_PIN_NUMBER), Bit_SET);
-	Delay_ms(50);
+	GPIOInit();
+	U_SPI1::Init(SPI1_Speed_18M);
+	CS_RESET;
+	RES_RESET;
+	{
+		volatile uint16_t i = 10000;
+		while (i--)
+			;
+	}
+	RES_SET;
+	CS_SET;
 #endif
-	//´ÓÉÏµçµ½ÏÂÃæ¿ªÊ¼³õÊ¼»¯ÒªÓÐ×ã¹»µÄÊ±¼ä£¬¼´µÈ´ýRC¸´Î»Íê±Ï
-	write(0xae, Cmd_Mode);
-	write(0xae, Cmd_Mode); //--turn off oled panel
-	write(0x00, Cmd_Mode); //---set low column address
-	write(0x10, Cmd_Mode); //---set high column address
-	write(0x40, Cmd_Mode); //--set start line address  Set Mapping RAM Display Start Line (0x00~0x3F)
-	write(0x81, Cmd_Mode); //--set contrast control register
-	write(0xcf, Cmd_Mode); // Set SEG Output Current Brightness
-	write(0xa1, Cmd_Mode); //--Set SEG/Column Mapping     0xa0×óÓÒ·´ÖÃ 0xa1Õý³£
-	write(0xc8, Cmd_Mode); //Set COM/Row Scan Direction   0xc0ÉÏÏÂ·´ÖÃ 0xc8Õý³£
-	write(0xa6, Cmd_Mode); //--set normal display
-	write(0xa8, Cmd_Mode); //--set multiplex ratio(1 to 64)
-	write(0x3f, Cmd_Mode); //--1/64 duty
-	write(0xd3, Cmd_Mode); //-set display offset	Shift Mapping RAM Counter (0x00~0x3F)
-	write(0x00, Cmd_Mode); //-not offset
-	write(0xd5, Cmd_Mode); //--set display clock divide ratio/oscillator frequency
-	write(0x80, Cmd_Mode); //--set divide ratio, Set Clock as 100 Frames/Sec
-	write(0xd9, Cmd_Mode); //--set pre-charge period
-	write(0xf1, Cmd_Mode); //Set Pre-Charge as 15 Clocks & Discharge as 1 Clock
-	write(0xda, Cmd_Mode); //--set com pins hardware configuration
-	write(0x12, Cmd_Mode);
-	write(0xdb, Cmd_Mode); //--set vcomh
-	write(0x40, Cmd_Mode); //Set VCOM Deselect Level
-	write(0x20, Cmd_Mode); //-Set Page Addressing Mode (0x00/0x01/0x02)
-	write(0x02, Cmd_Mode); //
-	write(0x8d, Cmd_Mode); //--set Charge Pump enable/disable
-	write(0x14, Cmd_Mode); //--set(0x10) disable
-	write(0xa4, Cmd_Mode); // Disable Entire Display On (0xa4/0xa5)
-	write(0xa6, Cmd_Mode); // Disable Inverse Display On (0xa6/a7)
-	write(0xaf, Cmd_Mode); //--turn on oled panel
-	fill(0x00); //³õÊ¼ÇåÆÁ
-	set_pos(0, 0);
+//ï¿½ï¿½ï¿½Ïµçµ½ï¿½ï¿½ï¿½æ¿ªÊ¼ï¿½ï¿½Ê¼ï¿½ï¿½Òªï¿½ï¿½ï¿½ã¹»ï¿½ï¿½Ê±ï¿½ä£¬ï¿½ï¿½ï¿½È´ï¿½RCï¿½ï¿½Î»ï¿½ï¿½ï¿½
+	Write(0xae, WriteMode_Cmd);
+	Write(0xae, WriteMode_Cmd); //--turn off oled panel
+	Write(0x00, WriteMode_Cmd); //---set low column address
+	Write(0x10, WriteMode_Cmd); //---set high column address
+	Write(0x40, WriteMode_Cmd); //--set start line address  Set Mapping RAM Display Start Line (0x00~0x3F)
+	Write(0x81, WriteMode_Cmd); //--set contrast control register
+	Write(0xcf, WriteMode_Cmd); // Set SEG Output Current Brightness
+	Write(0xa1, WriteMode_Cmd); //--Set SEG/Column Mapping     0xa0ï¿½ï¿½ï¿½Ò·ï¿½ï¿½ï¿½ 0xa1ï¿½ï¿½ï¿½ï¿½
+	Write(0xc8, WriteMode_Cmd); //Set COM/Row Scan Direction   0xc0ï¿½ï¿½ï¿½Â·ï¿½ï¿½ï¿½ 0xc8ï¿½ï¿½ï¿½ï¿½
+	Write(0xa6, WriteMode_Cmd); //--set normal display
+	Write(0xa8, WriteMode_Cmd); //--set multiplex ratio(1 to 64)
+	Write(0x3f, WriteMode_Cmd); //--1/64 duty
+	Write(0xd3, WriteMode_Cmd); //-set display offset	Shift Mapping RAM Counter (0x00~0x3F)
+	Write(0x00, WriteMode_Cmd); //-not offset
+	Write(0xd5, WriteMode_Cmd); //--set display clock divide ratio/oscillator frequency
+	Write(0x80, WriteMode_Cmd); //--set divide ratio, Set Clock as 100 Frames/Sec
+	Write(0xd9, WriteMode_Cmd); //--set pre-charge period
+	Write(0xf1, WriteMode_Cmd); //Set Pre-Charge as 15 Clocks & Discharge as 1 Clock
+	Write(0xda, WriteMode_Cmd); //--set com pins hardware configuration
+	Write(0x12, WriteMode_Cmd);
+	Write(0xdb, WriteMode_Cmd); //--set vcomh
+	Write(0x40, WriteMode_Cmd); //Set VCOM Deselect Level
+	Write(0x20, WriteMode_Cmd); //-Set Page Addressing Mode (0x00/0x01/0x02)
+	Write(0x02, WriteMode_Cmd); //
+	Write(0x8d, WriteMode_Cmd); //--set Charge Pump enable/disable
+	Write(0x14, WriteMode_Cmd); //--set(0x10) disable
+	Write(0xa4, WriteMode_Cmd); // Disable Entire Display On (0xa4/0xa5)
+	Write(0xa6, WriteMode_Cmd); // Disable Inverse Display On (0xa6/a7)
+	Write(0xaf, WriteMode_Cmd); //--turn on oled panel
+	Fill(0x00); //ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½
+	SetPos(0, 0);
 }
 
-void OLEDClass::write(uint8_t data, WriteMode mode)
-{
+void OLED::Write(uint8_t data, WriteMode_Typedef mode) {
 #ifdef I2C_Intface
-	if (mode == Cmd_Mode)
+	if (mode == WriteMode_Cmd)
 	I2C::send(OLED_Address, (uint8_t) 0x00, data);
-	else if (mode == Data_Mode)
+	else if (mode == WriteMode_Data)
 	I2C::send(OLED_Address, (uint8_t) 0x40, data);
 #endif
 #ifdef SPI_Intface
-	GPIO_WriteBit(OLED_GPIOx(OLED_DC_PORT_NUMBER),
-			OLED_PIN_MASK(OLED_DC_PIN_NUMBER), (BitAction) mode);
-	SPI.transfer(data);
+	CS_RESET;
+	if (mode == WriteMode_Cmd) {
+		DC_RESET;
+	} else {
+		DC_SET;
+	}
+	U_SPI1::SendSync(data);
+	CS_SET;
 #endif
 }
 
-void OLEDClass::set_pos(uint8_t x, uint8_t y)
-{
-	write(0xb0 + y, Cmd_Mode);
-	write(((x & 0xf0) >> 4) | 0x10, Cmd_Mode);
-	write((x & 0x0f) | 0x00, Cmd_Mode);
+void OLED::SetPos(uint8_t x, uint8_t y) {
+	Write(0xb0 + y, WriteMode_Cmd);
+	Write(((x & 0xf0) >> 4) | 0x10, WriteMode_Cmd);
+	Write((x & 0x0f) | 0x00, WriteMode_Cmd);
 }
 
-void OLEDClass::fill(uint8_t bmp_dat)
-{
+void OLED::Fill(uint8_t bmp_dat) {
 	uint8_t y, x;
-	for (y = 0; y < 8; y++)
-	{
-		set_pos(0, y);
+	for (y = 0; y < 8; y++) {
+		SetPos(0, y);
 		for (x = 0; x < 128; x++)
-			write(bmp_dat, Data_Mode);
+			Write(bmp_dat, WriteMode_Data);
 	}
 
 }
 
-void OLEDClass::print(uint8_t x, uint8_t y, char* str, CharMode mode)
-{
-	while (x <= (128 - (128 % mode) - mode) && *str != '\0') //¼ÆËã×îºóÒ»Î»¿ÉÐ´Î» && Ñ­»·Êä³ö×Ö·û
+void OLED::Print(uint8_t x, uint8_t y, uint8_t* str, CharMode_Typedef mode) {
+	while (x <= (128 - (128 % mode) - mode) && *str != '\0') //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»Î»ï¿½ï¿½Ð´Î» && Ñ­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½
 	{
-		print_c(x, y, *str, mode);
+		Print_c(x, y, *str, mode);
 		x += mode;
 		str++;
 	}
 }
 
-void OLEDClass::print(uint8_t x, uint8_t y, int num, CharMode mode)
-{
-	char str[20];
-	sprintf(str, "%d", num);
-	print(x, y, str, mode);
+void OLED::Print(uint8_t x, uint8_t y, int32_t num, CharMode_Typedef mode) {
+	uint8_t str[20];
+	byNumber(num, 10, str);
+	Print(x, y, str, mode);
 }
 
-void OLEDClass::print(uint8_t x, uint8_t y, long num, CharMode mode)
-{
-	char str[20];
-	sprintf(str, "%ld", num);
-	print(x, y, str, mode);
+void OLED::Print(uint8_t x, uint8_t y, double lf, uint8_t ndigit,
+		CharMode_Typedef mode) {
+	uint8_t str[20];
+	byFloat(lf, ndigit, str);
+	Print(x, y, str, mode);
 }
 
-void OLEDClass::print(uint8_t x, uint8_t y, float f, uint8_t ndigit, CharMode mode)
-{
-	char str[20];
-	char format[6] = "%.0f";
-	format[2] = 0x30 + ndigit;
-	sprintf(str, format, f);
-	print(x, y, str, mode);
-}
-
-void OLEDClass::print(uint8_t x, uint8_t y, double lf, uint8_t ndigit, CharMode mode)
-{
-	char str[20];
-	char format[6] = "%.0lf";
-	format[2] = 0x30 + ndigit;
-	sprintf(str, format, lf);
-	print(x, y, str, mode);
-}
-
-void OLEDClass::print_c(uint8_t x, uint8_t y, char c, CharMode mode)
-{
-	set_pos(x, y);
-	switch (mode)
-	{
-	case C6x8:
-		for (uint8_t i = 0; i < 6; i++)
-		{
-			write(F6x8[c - 32][i], Data_Mode);
+void OLED::Print_c(uint8_t x, uint8_t y, uint8_t c, CharMode_Typedef mode) {
+	SetPos(x, y);
+	switch (mode) {
+	case CharMode_6x8:
+		for (uint8_t i = 0; i < 6; i++) {
+			Write(F6x8[c - 32][i], WriteMode_Data);
 		}
 		break;
-	case C8x16:
-		for (uint8_t i = 0; i < 8; i++)
-		{
-			write(F8x16[c - 32][i], Data_Mode);
+	case CharMode_8x16:
+		for (uint8_t i = 0; i < 8; i++) {
+			Write(F8x16[c - 32][i], WriteMode_Data);
 		}
-		set_pos(x, y + 1);
-		for (uint8_t i = 8; i < 16; i++)
-		{
-			write(F8x16[c - 32][i], Data_Mode);
+		SetPos(x, y + 1);
+		for (uint8_t i = 8; i < 16; i++) {
+			Write(F8x16[c - 32][i], WriteMode_Data);
 		}
 		break;
-	case C16x16:
-		for (uint8_t i = 0; i < 16; i++)
-		{
-			write(F16x16[c - 32][i], Data_Mode);
+	case CharMode_16x16:
+		for (uint8_t i = 0; i < 16; i++) {
+			Write(F16x16[c - 32][i], WriteMode_Data);
 		}
-		set_pos(x, y + 1);
-		for (uint8_t i = 16; i < 32; i++)
-		{
-			write(F16x16[c - 32][i], Data_Mode);
+		SetPos(x, y + 1);
+		for (uint8_t i = 16; i < 32; i++) {
+			Write(F16x16[c - 32][i], WriteMode_Data);
 		}
 		break;
 	}
